@@ -109,7 +109,7 @@
     }
     async function run() {
       const buf = await downloadWithProgress("./pkg/risim_bg.wasm", (progress, total) => {
-        progressBar.value = Math.round(progress / total);
+        progressBar.value = Math.round((progress / total) * 100);
       });
       await init(buf);
     }
