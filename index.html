@@ -84,6 +84,7 @@
     xhr.open("GET", "./pkg/risim_bg.wasm", true);
     xhr.responseType = "arraybuffer";
     xhr.onprogress = (ev) => {
+      console.log(ev.lengthComputable, ev.loaded, ev.total)
       if (ev.lengthComputable) {
         const percent = Math.round((ev.loaded / ev.total) * 100);
         progressBar.value = percent;
