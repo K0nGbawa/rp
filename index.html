@@ -23,9 +23,11 @@
           outline: none;
       }
       #load-overlay {
+          flex-direction: column;
           position: absolute;
           top: 0;
           left: 0;
+          gap: 10px;
           width: 100%;
           height: 100%;
           z-index: 999;
@@ -34,24 +36,80 @@
           justify-content: center;
           align-items: center;
           color: white;
-          font-size: 6vw;
+          font-size: 4vw;
+      }
+      #progress-bar::-webkit-progress-bar {
+        background-color: #393939;
+        border-radius: 10px;
+        overflow: hidden;
+      }
+
+      #progress-bar::-webkit-progress-value {
+        background-color: #aaa;
+        border-radius: 10px;
+        transition: width 0.1s ease;
+      }
+
+      #progress-bar {
+        background-color: #393939;
+        border: none;
+        border-radius: 10px;
+        height: 20px;
+        width: 30%;
+      }
+
+      #progress-bar::-moz-progress-bar {
+        background-color: #aaa;
+        border-radius: 10px;
       }
     </style>
   </head>
   <body>
       <canvas id="cvs"></canvas>
       <div id="load-overlay">
-          Loading...
+          <div id="loading-text">Loading...</div>
+          <progress id="progress-bar" value="0" max="100"></progress>
       </div>
   </body>
   <script type="module">
     import init from "./pkg/risim.js";
 
-    init().then(() => {
-      document.getElementById("load-overlay").remove()
-    }).catch((error) => {
-      console.error("Failed to init:", error);
-    });
+    // init().then(() => {
+    //   document.getElementById("load-overlay").remove()
+    // }).catch((error) => {
+    //   console.error("Failed to init:", error);
+    // });
+    let progressBar = document.getElementById("progress-bar");
+    let xhr = new XMLHttpRequest();
+    xhr.open("GET", "./pkg/risim_bg.wasm", true);
+    xhr.responseType = "arraybuffer";
+    xhr.onprogress = (ev) => {
+      if (ev.lengthComputable) {
+        const percent = Math.round((ev.loaded / ev.total) * 100);
+        progressBar.value = percent;
+      } else {
+        progressBar.remove();
+      }
+    };
+    xhr.onload = (ev) => {
+      if (xhr.status === 200) {
+        const wasmBytes = xhr.response;
+        init(wasmBytes).then(() => {
+          document.getElementById("load-overlay").remove();
+        }).catch((e) => {
+          console.error("Failed to load wasm. Cause by: ", e);
+          document.getElementById("load-overlay").innerHTML = "<div style='color: red;'>初始化失败</div>";
+        })
+      } else {
+        console.error("Failed to download wasm. Status code: ", xhr.status);
+          document.getElementById("load-overlay").innerHTML = "<div style='color: red;'>网络异常</div>";
+      }
+    }
+    xhr.error = () => {
+      console.error("Failed to request.");
+        document.getElementById("load-overlay").innerHTML = "<div style='color: red;'>网络异常</div>";
+    }
+    xhr.send();
   </script>
   <script>
     // Insert hack to make sound autoplay on Chrome as soon as the user interacts with the tab:
