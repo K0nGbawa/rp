@@ -109,9 +109,10 @@
     }
     async function run() {
       const sizeResp = await fetch("./pkg/size");
-      const raw_total = parseInt(await sizeResp.text());
+      const sizeText = await sizeResp.text();
+      const rawTotal = parseInt(sizeText.trim());
       const buf = await downloadWithProgress("./pkg/risim_bg.wasm", (progress) => {
-        progressBar.value = Math.round((progress / raw_total) * 100);
+        progressBar.value = Math.round((progress / rawTotal) * 100);
       });
       await init(buf);
     }
