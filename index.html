@@ -18,16 +18,19 @@
         background-color: #1b1b1b;
       }
       #cvs {
-          width: auto !important;
-          height: 100% !important;
+          max-width: 100%;
+          max-height: 100%;
+          width: auto;
+          height: auto;
+          aspect-ratio: 9 / 16;
+          display: block;
+          margin: 0 auto;   /* 水平居中 */
           outline: none;
       }
       #load-overlay {
-          flex-direction: column;
           position: absolute;
           top: 0;
           left: 0;
-          gap: 10px;
           width: 100%;
           height: 100%;
           z-index: 999;
@@ -36,92 +39,25 @@
           justify-content: center;
           align-items: center;
           color: white;
-          font-size: 4vw;
-      }
-      #progress-bar::-webkit-progress-bar {
-        background-color: #393939;
-        border-radius: 10px;
-        overflow: hidden;
-      }
-
-      #progress-bar::-webkit-progress-value {
-        background-color: #aaa;
-        border-radius: 10px;
-        transition: width 0.1s ease;
-      }
-
-      #progress-bar {
-        background-color: #393939;
-        border: none;
-        border-radius: 10px;
-        height: 20px;
-        width: 30%;
-      }
-
-      #progress-bar::-moz-progress-bar {
-        background-color: #aaa;
-        border-radius: 10px;
+          font-size: 6vw;
       }
     </style>
   </head>
   <body>
       <canvas id="cvs"></canvas>
       <div id="load-overlay">
-          <div id="loading-text">Loading...</div>
-          <progress id="progress-bar" value="0" max="100"></progress>
+          Loading...
       </div>
   </body>
   <script type="module">
     import init from "./pkg/risim.js";
 
-    // init().then(() => {
-    //   document.getElementById("load-overlay").remove()
-    // }).catch((error) => {
-    //   console.error("Failed to init:", error);
-    // });
-    let progressBar = document.getElementById("progress-bar");
-    // changed from: https://qwertyyb.github.io/%E5%89%8D%E7%AB%AF%E8%8E%B7%E5%8F%96%E4%B8%8B%E8%BD%BD%E8%BF%9B%E5%BA%A6%E2%80%94%E2%80%94%E4%BB%8E%E5%85%A5%E9%97%A8%E5%88%B0%E6%94%BE%E5%BC%83.html
-    const downloadWithProgress = async (url, onUpdate) => {
-      const response = await fetch(url)
-      // const total = +response.headers.get('Content-Length')
-      const result = []
-      let progress = 0
-      const reader = response.body.getReader()
-      while(true) {
-        const { done, value } = await reader.read()
-        if (done) {
-          break;
-        }
-        result.push(value)
-        progress += value.length
-        onUpdate && onUpdate(progress)
-      }
-
-      let data = new Uint8Array(progress)
-
-      let position = 0
-      result.forEach(item => {
-        data.set(item, position)
-        position += item.length
-      })
-
-      return data
-    }
-    async function run() {
-      const sizeResp = await fetch("./pkg/size");
-      const sizeText = await sizeResp.text();
-      const rawTotal = parseInt(sizeText.trim());
-      const buf = await downloadWithProgress("./pkg/risim_bg.wasm", (progress) => {
-        progressBar.value = Math.round((progress / rawTotal) * 100);
-      });
-      await init(buf);
-    }
-    
-    run().then(() => {
+    init({
+      onprogress
+    }).then(() => {
       document.getElementById("load-overlay").remove()
     }).catch((error) => {
       console.error("Failed to init:", error);
-      document.getElementById("load-overlay").innerHTML = "<div style='color: red;'>初始化失败，请刷新页面重试</div>"
     });
   </script>
   <script>
