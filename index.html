@@ -34,27 +34,79 @@
           width: 100%;
           height: 100%;
           z-index: 999;
+          gap: 10px;
           background-color: rgba(0, 0, 0, 0.5);
           display: flex;
+          flex-direction: column;
           justify-content: center;
           align-items: center;
           color: white;
-          font-size: 6vw;
+          font-size: 2vw;
+      }
+      #loading-progress::-webkit-progress-bar {
+        background-color: #393939;
+        border-radius: 10px;
+        overflow: hidden;
+      }
+
+      #loading-progress::-webkit-progress-value {
+        background-color: #aaa;
+        border-radius: 10px;
+        transition: width 0.1s ease;
+      }
+
+      #loading-progress {
+        background-color: #393939;
+        border: none;
+        border-radius: 5px;
+        width: 20%;
+        height: 10px;
+      }
+
+      #loading-progress::-moz-progress-bar {
+        background-color: #aaa;
+        border-radius: 10px;
       }
     </style>
   </head>
   <body>
       <canvas id="cvs"></canvas>
       <div id="load-overlay">
-          Loading...
+          <div id="loading-text">Loading...</div>
+          <progress id="loading-progress" value="0" max="100"></progress>
       </div>
   </body>
   <script type="module">
     import init from "./pkg/risim.js";
 
-    init({
-      onprogress
-    }).then(() => {
+    async function run() {
+      const progress = document.getElementById("loading-progress")
+      const sizeResp = await fetch("./pkg/size")
+      const sizeText = await sizeResp.text()
+      const size = parseInt(sizeText.trim())
+      const resp = await fetch("./pkg/risim_bg.wasm")
+      const reader = resp.body.getReader();
+      let receivedLength = 0;
+      let chunks = [];
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        receivedLength += value.length;
+        progress.value = Math.round(receivedLength / size);
+      }
+
+      const allData = new Uint8Array(receivedLength);
+      let position = 0;
+      for (const chunk of chunks) {
+        allData.set(chunk, position);
+        position += chunk.length;
+      }
+      await init(allData);
+    }
+
+    run().then(() => {
       document.getElementById("load-overlay").remove()
     }).catch((error) => {
       console.error("Failed to init:", error);
